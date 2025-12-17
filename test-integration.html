@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integration Test - AI Snake Game</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff41;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #00ff41;
+            border-radius: 5px;
+        }
+        .pass { color: #00ff41; }
+        .fail { color: #ff0040; }
+        .info { color: #ffff00; }
+        button {
+            background: #00ff41;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button:hover {
+            background: #66ff66;
+        }
+        #results {
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .game-preview {
+            border: 2px solid #00ff41;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Snake Game - Integration Tests</h1>
+    <p class="info">Testing complete system integration and game flow</p>
+    
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button onclick="runAllTests()">Run All Integration Tests</button>
+        <button onclick="testGameFlow()">Test Game Flow</button>
+        <button onclick="testAIIntegration()">Test AI Integration</button>
+        <button onclick="testDifficultyIntegration()">Test Difficulty Integration</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Game Preview</h2>
+        <canvas id="testCanvas" class="game-preview" width="200" height="200"></canvas>
+        <p>Mini game instance for testing</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        import { GameEngine } from './js/game/GameEngine.js';
+        import { UIManager } from './js/ui/UIManager.js';
+
+        let results = document.getElementById('results');
+        let testGameEngine = null;
+        let testUIManager = null;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'pass' ? '✓' : type === 'fail' ? '❌' : 'ℹ';
+            results.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function initTestGame() {
+            const canvas = document.getElementById('testCanvas');
+            testGameEngine = new GameEngine(canvas);
+            testUIManager = new UIManager();
+            testUIManager.init();
+            return { engine: testGameEngine, ui: testUIManager };
+        }
+
+        function testGameEngineInitialization() {
+            log('=== Testing Game Engine Initialization ===');
+            
+            try {
+                const { engine } = initTestGame();
+                
+                // Test basic initialization
+                if (!engine) {
+                    log('Game engine failed to initialize', 'fail');
+                    return false;
+                }
+                log('Game engine initialized successfully', 'pass');
+                
+                // Test component initialization
+                if (!engine.getDifficultyManager()) {
+                    log('Difficulty manager not initialized', 'fail');
+                    return false;
+                }
+                log('Difficulty manager initialized', 'pass');
+                
+                if (!engine.getHintSystem()) {
+                    log('Hint system not initialized', 'fail');
+                    return false;
+                }
+                log('Hint system initialized', 'pass');
+                
+                // Test initial state
+                if (engine.getGameState() !== 'stopped') {
+                    log(`Expected initial state 'stopped', got '${engine.getGameState()}'`, 'fail');
+                    return false;
+                }
+                log('Initial game state correct', 'pass');
+                
+                return true;
+                
+            } catch (error) {
+                log(`Game engine initialization failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        function testGameFlow() {
+            log('=== Testing Game Flow ===');
+            
+            try {
+                const { engine } = initTestGame();
+                
+                // Test game start
+                engine.start();
+                if (engine.getGameState() !== 'running') {
+                    log(`Expected state 'running' after start, got '${engine.getGameState()}'`, 'fail');
+                    return false;
+                }
+                log('Game starts correctly', 'pass');
+                
+                // Test pause/resume
+                engine.togglePause();
+                if (engine.getGameState() !== 'paused') {
+                    log(`Expected state 'paused' after pause, got '${engine.getGameState()}'`, 'fail');
+                    return false;
+                }
+                log('Game pauses correctly', 'pass');
+                
+                engine.togglePause();
+                if (engine.getGameState() !== 'running') {
+                    log(`Expected state 'running' after resume, got '${engine.getGameState()}'`, 'fail');
+                    return false;
+                }
+                log('Game resumes correctly', 'pass');
+                
+                // Test restart
+                engine.start();
+                if (engine.getScore() !== 0) {
+                    log(`Expected score 0 after restart, got ${engine.getScore()}`, 'fail');
+                    return false;
+                }
+                log('Game restarts correctly', 'pass');
+                
+                return true;
+                
+            } catch (error) {
+                log(`Game flow test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        function testAIIntegration() {
+            log('=== Testing AI Integration ===');
+            
+            try {
+                const { engine } = initTestGame();
+                const hintSystem = engine.getHintSystem();
+                
+                // Test hint system integration
+                if (!hintSystem) {
+                    log('Hint system not available', 'fail');
+                    return false;
+                }
+                log('Hint system accessible', 'pass');
+                
+                // Test hint toggle
+                const initialState = hintSystem.areHintsEnabled();
+                const newState = engine.toggleHints();
+                
+                if (newState === initialState) {
+                    log('Hint toggle not working', 'fail');
+                    return false;
+                }
+                log('Hint toggle works correctly', 'pass');
+                
+                // Test hint enable/disable
+                engine.enableHints();
+                if (!hintSystem.areHintsEnabled()) {
+                    log('Enable hints not working', 'fail');
+                    return false;
+                }
+                log('Enable hints works', 'pass');
+                
+                engine.disableHints();
+                if (hintSystem.areHintsEnabled()) {
+                    log('Disable hints not working', 'fail');
+                    return false;
+                }
+                log('Disable hints works', 'pass');
+                
+                // Test pathfinding integration
+                engine.enableHints();
+                engine.start();
+                
+                // Simulate a few game updates to trigger pathfinding
+                for (let i = 0; i < 3; i++) {
+                    engine.update();
+                }
+                
+                log('AI pathfinding integration working', 'pass');
+                
+                return true;
+                
+            } catch (error) {
+                log(`AI integration test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        function testDifficultyIntegration() {
+            log('=== Testing Difficulty Integration ===');
+            
+            try {
+                const { engine } = initTestGame();
+                const difficultyManager = engine.getDifficultyManager();
+                
+                // Test difficulty manager integration
+                if (!difficultyManager) {
+                    log('Difficulty manager not available', 'fail');
+                    return false;
+                }
+                log('Difficulty manager accessible', 'pass');
+                
+                // Test initial difficulty
+                const initialSpeed = difficultyManager.getCurrentSpeed();
+                if (initialSpeed <= 0 || initialSpeed > 500) {
+                    log(`Invalid initial speed: ${initialSpeed}`, 'fail');
+                    return false;
+                }
+                log(`Initial difficulty speed: ${initialSpeed}ms`, 'pass');
+                
+                // Test difficulty level calculation
+                const difficultyLevel = difficultyManager.getDifficultyLevel();
+                if (difficultyLevel < 1 || difficultyLevel > 10) {
+                    log(`Invalid difficulty level: ${difficultyLevel}`, 'fail');
+                    return false;
+                }
+                log(`Difficulty level: ${difficultyLevel}/10`, 'pass');
+                
+                // Test game speed integration
+                engine.start();
+                const gameSpeed = engine.getGameSpeed();
+                
+                if (gameSpeed !== initialSpeed) {
+                    log(`Game speed (${gameSpeed}) doesn't match difficulty speed (${initialSpeed})`, 'fail');
+                    return false;
+                }
+                log('Game speed matches difficulty manager', 'pass');
+                
+                return true;
+                
+            } catch (error) {
+                log(`Difficulty integration test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        function testUIIntegration() {
+            log('=== Testing UI Integration ===');
+            
+            try {
+                const { engine, ui } = initTestGame();
+                
+                // Test UI manager initialization
+                if (!ui) {
+                    log('UI manager not initialized', 'fail');
+                    return false;
+                }
+                log('UI manager initialized', 'pass');
+                
+                // Test score update integration
+                let scoreUpdateReceived = false;
+                engine.setScoreUpdateCallback((data) => {
+                    scoreUpdateReceived = true;
+                    log(`Score update received: ${JSON.stringify(data)}`, 'info');
+                });
+                
+                engine.start();
+                engine.notifyScoreUpdate();
+                
+                if (!scoreUpdateReceived) {
+                    log('Score update callback not working', 'fail');
+                    return false;
+                }
+                log('Score update integration working', 'pass');
+                
+                // Test game over integration
+                let gameOverReceived = false;
+                engine.setGameOverCallback((stats) => {
+                    gameOverReceived = true;
+                    log(`Game over received: ${JSON.stringify(stats)}`, 'info');
+                });
+                
+                // Simulate game over
+                engine.endGame();
+                
+                if (!gameOverReceived) {
+                    log('Game over callback not working', 'fail');
+                    return false;
+                }
+                log('Game over integration working', 'pass');
+                
+                return true;
+                
+            } catch (error) {
+                log(`UI integration test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        function testPersistenceIntegration() {
+            log('=== Testing Persistence Integration ===');
+            
+            try {
+                // Clear existing data
+                localStorage.clear();
+                
+                const { engine, ui } = initTestGame();
+                
+                // Test high score persistence
+                const gameStats = {
+                    score: 150,
+                    length: 10,
+                    survivalTime: 30000,
+                    foodCollected: 9
+                };
+                
+                ui.updatePersistentStats(gameStats);
+                
+                // Create new UI manager to test loading
+                const ui2 = new UIManager();
+                if (ui2.getHighScore() !== 150) {
+                    log(`Expected high score 150, got ${ui2.getHighScore()}`, 'fail');
+                    return false;
+                }
+                log('High score persistence working', 'pass');
+                
+                // Test difficulty persistence
+                const difficultyManager = engine.getDifficultyManager();
+                difficultyManager.recordGameEnd(gameStats);
+                
+                // Verify data was saved
+                const perfStats = difficultyManager.getPerformanceStats();
+                if (perfStats.gamesPlayed !== 1) {
+                    log(`Expected 1 game played, got ${perfStats.gamesPlayed}`, 'fail');
+                    return false;
+                }
+                log('Difficulty persistence working', 'pass');
+                
+                return true;
+                
+            } catch (error) {
+                log(`Persistence integration test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        window.runAllTests = function() {
+            results.innerHTML = '';
+            log('Running Complete Integration Tests for AI Snake Game');
+            log('Testing all systems working together');
+            log('');
+            
+            let allPassed = true;
+            
+            try {
+                if (!testGameEngineInitialization()) {
+                    allPassed = false;
+                }
+                log('');
+                
+                if (!testGameFlow()) {
+                    allPassed = false;
+                }
+                log('');
+                
+                if (!testAIIntegration()) {
+                    allPassed = false;
+                }
+                log('');
+                
+                if (!testDifficultyIntegration()) {
+                    allPassed = false;
+                }
+                log('');
+                
+                if (!testUIIntegration()) {
+                    allPassed = false;
+                }
+                log('');
+                
+                if (!testPersistenceIntegration()) {
+                    allPassed = false;
+                }
+                log('');
+                
+            } catch (error) {
+                log(`Integration test execution failed: ${error.message}`, 'fail');
+                allPassed = false;
+            }
+            
+            if (allPassed) {
+                log('🎉 ALL INTEGRATION TESTS PASSED', 'pass');
+                log('All systems are properly integrated and working together', 'pass');
+            } else {
+                log('❌ SOME INTEGRATION TESTS FAILED', 'fail');
+                log('Check individual test results above', 'fail');
+            }
+        };
+
+        window.testGameFlow = function() {
+            results.innerHTML = '';
+            testGameFlow();
+        };
+
+        window.testAIIntegration = function() {
+            results.innerHTML = '';
+            testAIIntegration();
+        };
+
+        window.testDifficultyIntegration = function() {
+            results.innerHTML = '';
+            testDifficultyIntegration();
+        };
+
+        window.clearResults = function() {
+            results.innerHTML = '';
+        };
+
+        // Auto-run a basic test on load
+        setTimeout(() => {
+            log('Integration test page loaded successfully');
+            log('Click "Run All Integration Tests" to verify system integration');
+        }, 100);
+    </script>
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Persistence Test - AI Snake Game</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff41;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #00ff41;
+            border-radius: 5px;
+        }
+        .pass { color: #00ff41; }
+        .fail { color: #ff0040; }
+        .info { color: #ffff00; }
+        button {
+            background: #00ff41;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button:hover {
+            background: #66ff66;
+        }
+        #results {
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Snake Game - Persistence Tests</h1>
+    <p class="info">Testing Requirements 5.4, 5.5 - High score persistence with local storage</p>
+    
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearAllData()">Clear All Data</button>
+        <button onclick="showCurrentData()">Show Current Data</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        import { UIManager } from './js/ui/UIManager.js';
+        import { DifficultyManager } from './js/ai/DifficultyManager.js';
+
+        let results = document.getElementById('results');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'pass' ? '✓' : type === 'fail' ? '❌' : 'ℹ';
+            results.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function testHighScorePersistence() {
+            log('=== Testing High Score Persistence ===');
+            
+            try {
+                // Clear existing data
+                localStorage.removeItem('snakeHighScore');
+                localStorage.removeItem('snakeGameData');
+                
+                const ui = new UIManager();
+                
+                // Test 1: Initial high score
+                if (ui.highScore !== 0) {
+                    log(`Expected initial high score 0, got ${ui.highScore}`, 'fail');
+                    return false;
+                }
+                log('Initial high score is 0', 'pass');
+                
+                // Test 2: Save and load high score
+                ui.highScore = 150;
+                ui.saveHighScore();
+                
+                const ui2 = new UIManager();
+                if (ui2.highScore !== 150) {
+                    log(`Expected loaded high score 150, got ${ui2.highScore}`, 'fail');
+                    return false;
+                }
+                log('High score saved and loaded correctly', 'pass');
+                
+                // Test 3: Update persistent stats
+                const gameStats = {
+                    score: 200,
+                    length: 15,
+                    survivalTime: 45000,
+                    foodCollected: 14
+                };
+                
+                const persistentStats = ui2.updatePersistentStats(gameStats);
+                
+                if (persistentStats.highScore !== 200) {
+                    log(`Expected new high score 200, got ${persistentStats.highScore}`, 'fail');
+                    return false;
+                }
+                
+                if (persistentStats.totalGamesPlayed !== 1) {
+                    log(`Expected total games 1, got ${persistentStats.totalGamesPlayed}`, 'fail');
+                    return false;
+                }
+                
+                log('Persistent stats updated correctly', 'pass');
+                
+                // Test 4: Multiple games
+                const gameStats2 = {
+                    score: 100,
+                    length: 8,
+                    survivalTime: 30000,
+                    foodCollected: 7
+                };
+                
+                const persistentStats2 = ui2.updatePersistentStats(gameStats2);
+                
+                if (persistentStats2.totalGamesPlayed !== 2) {
+                    log(`Expected total games 2, got ${persistentStats2.totalGamesPlayed}`, 'fail');
+                    return false;
+                }
+                
+                if (persistentStats2.averageScore !== 150) {
+                    log(`Expected average score 150, got ${persistentStats2.averageScore}`, 'fail');
+                    return false;
+                }
+                
+                log('Multiple games tracked correctly', 'pass');
+                return true;
+                
+            } catch (error) {
+                log(`High score persistence test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        function testDifficultyPersistence() {
+            log('=== Testing Difficulty Persistence ===');
+            
+            try {
+                // Clear existing data
+                localStorage.removeItem('snakeDifficultyData');
+                
+                const difficulty = new DifficultyManager();
+                
+                // Test 1: Initial state
+                if (difficulty.getCurrentSpeed() !== 150) {
+                    log(`Expected initial speed 150, got ${difficulty.getCurrentSpeed()}`, 'fail');
+                    return false;
+                }
+                log('Initial difficulty state correct', 'pass');
+                
+                // Test 2: Record game and save
+                const gameStats = {
+                    score: 100,
+                    length: 8,
+                    survivalTime: 30000,
+                    foodCollected: 7
+                };
+                
+                difficulty.recordGameEnd(gameStats);
+                
+                // Create new instance to test loading
+                const difficulty2 = new DifficultyManager();
+                
+                if (difficulty2.performanceHistory.length !== 1) {
+                    log(`Expected 1 game in history, got ${difficulty2.performanceHistory.length}`, 'fail');
+                    return false;
+                }
+                
+                log('Difficulty data saved and loaded correctly', 'pass');
+                
+                // Test 3: Speed persistence
+                difficulty2.currentSpeed = 120;
+                difficulty2.savePerformanceData();
+                
+                const difficulty3 = new DifficultyManager();
+                if (difficulty3.getCurrentSpeed() !== 120) {
+                    log(`Expected speed 120, got ${difficulty3.getCurrentSpeed()}`, 'fail');
+                    return false;
+                }
+                
+                log('Speed persistence works correctly', 'pass');
+                return true;
+                
+            } catch (error) {
+                log(`Difficulty persistence test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        function testDataIntegrity() {
+            log('=== Testing Data Integrity ===');
+            
+            try {
+                // Test 1: Invalid data handling
+                localStorage.setItem('snakeHighScore', 'invalid');
+                localStorage.setItem('snakeGameData', 'invalid json');
+                
+                const ui = new UIManager();
+                if (ui.highScore !== 0) {
+                    log(`Expected high score 0 for invalid data, got ${ui.highScore}`, 'fail');
+                    return false;
+                }
+                
+                const gameData = ui.loadGameData();
+                if (gameData.totalGamesPlayed !== 0) {
+                    log(`Expected default data for invalid JSON, got ${gameData.totalGamesPlayed}`, 'fail');
+                    return false;
+                }
+                
+                log('Invalid data handled correctly', 'pass');
+                
+                // Test 2: Negative values
+                localStorage.setItem('snakeGameData', JSON.stringify({
+                    highScore: -100,
+                    totalGamesPlayed: -5,
+                    totalScore: -200
+                }));
+                
+                const ui2 = new UIManager();
+                const gameData2 = ui2.loadGameData();
+                
+                if (gameData2.highScore < 0 || gameData2.totalGamesPlayed < 0 || gameData2.totalScore < 0) {
+                    log('Negative values not properly handled', 'fail');
+                    return false;
+                }
+                
+                log('Negative values handled correctly', 'pass');
+                return true;
+                
+            } catch (error) {
+                log(`Data integrity test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        window.runAllTests = function() {
+            results.innerHTML = '';
+            log('Running Persistence Tests for AI Snake Game');
+            log('Testing Requirements 5.4, 5.5 - High score persistence with local storage');
+            log('');
+            
+            let allPassed = true;
+            
+            try {
+                if (!testHighScorePersistence()) {
+                    allPassed = false;
+                }
+                log('');
+                
+                if (!testDifficultyPersistence()) {
+                    allPassed = false;
+                }
+                log('');
+                
+                if (!testDataIntegrity()) {
+                    allPassed = false;
+                }
+                log('');
+                
+            } catch (error) {
+                log(`Test execution failed: ${error.message}`, 'fail');
+                allPassed = false;
+            }
+            
+            if (allPassed) {
+                log('All persistence tests PASSED', 'pass');
+                log('Requirements 5.4, 5.5 validated successfully', 'pass');
+            } else {
+                log('Some persistence tests FAILED', 'fail');
+            }
+        };
+
+        window.clearAllData = function() {
+            localStorage.clear();
+            log('All localStorage data cleared');
+        };
+
+        window.showCurrentData = function() {
+            log('=== Current localStorage Data ===');
+            
+            const highScore = localStorage.getItem('snakeHighScore');
+            const gameData = localStorage.getItem('snakeGameData');
+            const difficultyData = localStorage.getItem('snakeDifficultyData');
+            
+            log(`High Score: ${highScore || 'Not set'}`);
+            log(`Game Data: ${gameData || 'Not set'}`);
+            log(`Difficulty Data: ${difficultyData || 'Not set'}`);
+            
+            if (gameData) {
+                try {
+                    const parsed = JSON.parse(gameData);
+                    log(`Parsed Game Data: ${JSON.stringify(parsed, null, 2)}`);
+                } catch (e) {
+                    log('Game data is not valid JSON');
+                }
+            }
+        };
+    </script>
+</body>
+</html>

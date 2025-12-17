@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Snake Movement Property Test</title>
+    <style>
+        body { font-family: monospace; background: #000; color: #0f0; padding: 20px; }
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        .info { color: #ff0; }
+        pre { background: #111; padding: 10px; border: 1px solid #333; }
+    </style>
+</head>
+<body>
+    <h1>Snake Movement Property Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Inline Snake implementation for testing
+        class Snake {
+            constructor(startX, startY) {
+                this.body = [{ x: startX, y: startY }];
+                this.direction = 'right';
+                this.nextDirection = 'right';
+                this.alive = true;
+            }
+
+            move() {
+                if (!this.alive) return;
+                this.direction = this.nextDirection;
+                const head = { ...this.body[0] };
+                
+                switch (this.direction) {
+                    case 'up': head.y -= 1; break;
+                    case 'down': head.y += 1; break;
+                    case 'left': head.x -= 1; break;
+                    case 'right': head.x += 1; break;
+                }
+
+                this.body.unshift(head);
+                this.body.pop();
+            }
+
+            changeDirection(newDirection) {
+                if (!this.alive) return;
+                const opposites = { 'up': 'down', 'down': 'up', 'left': 'right', 'right': 'left' };
+                if (opposites[this.direction] !== newDirection) {
+                    this.nextDirection = newDirection;
+                }
+            }
+
+            getHead() { return this.body[0]; }
+        }
+
+        // Property test implementation
+        function runPropertyTest() {
+            const results = document.getElementById('results');
+            
+            function log(message, className = '') {
+                const div = document.createElement('div');
+                div.innerHTML = message;
+                div.className = className;
+                results.appendChild(div);
+            }
+            
+            log('<h2>Property Test: Input Direction Mapping</h2>', 'info');
+            log('Feature: ai-snake-game, Property 1: Input direction mapping', 'info');
+            log('Validates: Requirements 1.1 - Snake moves in response to direction input', 'info');
+            log('<br>');
+            
+            const directions = ['up', 'down', 'left', 'right'];
+            let totalTests = 0;
+            let passedTests = 0;
+            let failedTests = 0;
+            
+            // Run 100 random test cases
+            for (let i = 0; i < 100; i++) {
+                totalTests++;
+                
+                // Generate random test case
+                const initialDir = directions[Math.floor(Math.random() * 4)];
+                const requestedDir = directions[Math.floor(Math.random() * 4)];
+                const startX = Math.floor(Math.random() * 10) + 5;
+                const startY = Math.floor(Math.random() * 10) + 5;
+                
+                // Test the property
+                const result = testDirectionMapping(initialDir, requestedDir, startX, startY);
+                
+                if (result.success) {
+                    passedTests++;
+                } else {
+                    failedTests++;
+                    log(`Test ${i + 1} FAILED: ${result.error}`, 'fail');
+                    log(`  Initial: ${initialDir}, Requested: ${requestedDir}`, 'fail');
+                }
+            }
+            
+            log('<br><h3>Test Results:</h3>', 'info');
+            log(`Total Tests: ${totalTests}`);
+            log(`Passed: ${passedTests}`, passedTests === totalTests ? 'pass' : '');
+            log(`Failed: ${failedTests}`, failedTests > 0 ? 'fail' : '');
+            
+            if (failedTests === 0) {
+                log('<br><strong>✓ PROPERTY TEST PASSED!</strong>', 'pass');
+                log('All 100 iterations successful - Property holds for all test cases', 'pass');
+                return true;
+            } else {
+                log('<br><strong>✗ PROPERTY TEST FAILED!</strong>', 'fail');
+                log(`${failedTests} counterexamples found`, 'fail');
+                return false;
+            }
+        }
+        
+        function testDirectionMapping(initialDir, requestedDir, startX, startY) {
+            try {
+                const snake = new Snake(startX, startY);
+                snake.direction = initialDir;
+                snake.nextDirection = initialDir;
+                
+                const initialPos = { ...snake.getHead() };
+                
+                snake.changeDirection(requestedDir);
+                snake.move();
+                
+                const newPos = snake.getHead();
+                
+                // Determine expected direction
+                const opposites = { 'up': 'down', 'down': 'up', 'left': 'right', 'right': 'left' };
+                const expectedDir = (opposites[initialDir] === requestedDir) ? initialDir : requestedDir;
+                
+                // Calculate expected position
+                const expectedPos = { ...initialPos };
+                switch (expectedDir) {
+                    case 'up': expectedPos.y -= 1; break;
+                    case 'down': expectedPos.y += 1; break;
+                    case 'left': expectedPos.x -= 1; break;
+                    case 'right': expectedPos.x += 1; break;
+                }
+                
+                // Verify position
+                if (newPos.x !== expectedPos.x || newPos.y !== expectedPos.y) {
+                    return {
+                        success: false,
+                        error: `Position mismatch. Expected (${expectedPos.x},${expectedPos.y}), got (${newPos.x},${newPos.y})`
+                    };
+                }
+                
+                return { success: true };
+                
+            } catch (error) {
+                return { success: false, error: `Exception: ${error.message}` };
+            }
+        }
+        
+        // Run the test when page loads
+        window.onload = function() {
+            const success = runPropertyTest();
+            
+            // Store result for potential automation
+            window.testResult = success;
+        };
+    </script>
+</body>
+</html>

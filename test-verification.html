@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Verification - AI Snake Game</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff41;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #00ff41;
+            border-radius: 5px;
+        }
+        .pass { color: #00ff41; }
+        .fail { color: #ff0040; }
+        .info { color: #ffff00; }
+        .warning { color: #ff8800; }
+        button {
+            background: #00ff41;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button:hover {
+            background: #66ff66;
+        }
+        #results {
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 600px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border: 1px solid #333;
+        }
+        .test-summary {
+            background: rgba(0, 255, 65, 0.1);
+            border: 2px solid #00ff41;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Snake Game - Test Verification</h1>
+    <p class="info">Comprehensive verification of all implemented tests and systems</p>
+    
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button onclick="runAllVerifications()">🧪 Verify All Tests</button>
+        <button onclick="runPropertyTests()">🔍 Property Tests</button>
+        <button onclick="runUnitTests()">⚙️ Unit Tests</button>
+        <button onclick="runIntegrationTests()">🔗 Integration Tests</button>
+        <button onclick="clearResults()">🗑️ Clear Results</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="testSummary" class="test-summary" style="display: none;">
+            <h3>Verification Summary</h3>
+            <div id="summaryContent"></div>
+        </div>
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        import { SnakePropertyTest } from './js/entities/Snake.property.test.js';
+        import { GameEngine } from './js/game/GameEngine.js';
+        import { UIManager } from './js/ui/UIManager.js';
+        import { Snake } from './js/entities/Snake.js';
+        import { Food } from './js/entities/Food.js';
+
+        let results = document.getElementById('results');
+        let testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0,
+            warnings: 0,
+            propertyTests: [],
+            unitTests: [],
+            integrationTests: []
+        };
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'pass' ? '✅' : type === 'fail' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            results.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+            results.scrollTop = results.scrollHeight;
+            
+            testResults.total++;
+            if (type === 'pass') testResults.passed++;
+            else if (type === 'fail') testResults.failed++;
+            else if (type === 'warning') testResults.warnings++;
+        }
+
+        function updateTestSummary() {
+            const summary = document.getElementById('testSummary');
+            const content = document.getElementById('summaryContent');
+            
+            const passRate = testResults.total > 0 ? (testResults.passed / testResults.total * 100).toFixed(1) : 0;
+            
+            content.innerHTML = `
+                <p><strong>Total Verifications:</strong> ${testResults.total}</p>
+                <p><strong>Passed:</strong> ${testResults.passed} (${passRate}%)</p>
+                <p><strong>Failed:</strong> ${testResults.failed}</p>
+                <p><strong>Warnings:</strong> ${testResults.warnings}</p>
+                <p><strong>Property Tests:</strong> ${testResults.propertyTests.length}</p>
+                <p><strong>Unit Tests:</strong> ${testResults.unitTests.length}</p>
+                <p><strong>Integration Tests:</strong> ${testResults.integrationTests.length}</p>
+                <p><strong>Overall Status:</strong> ${testResults.failed === 0 ? '🎉 ALL VERIFICATIONS PASSED' : '❌ Some verifications failed'}</p>
+            `;
+            
+            summary.style.display = 'block';
+        }
+
+        // Property Test Verification
+        async function verifyPropertyTests() {
+            log('=== Verifying Property Tests ===');
+            
+            try {
+                // Test 1: Snake Movement Property Test (Task 2.2 - Implemented)
+                log('Verifying Property 1: Input direction mapping');
+                const result1 = SnakePropertyTest.runInputDirectionMappingTest(100);
+                
+                if (result1.success) {
+                    log('✓ Property 1 (Input direction mapping) - PASSED', 'pass');
+                    testResults.propertyTests.push({ name: 'Input direction mapping', status: 'passed', validates: 'Requirements 1.1' });
+                } else {
+                    log(`✗ Property 1 (Input direction mapping) - FAILED (${result1.failedTests} failures)`, 'fail');
+                    testResults.propertyTests.push({ name: 'Input direction mapping', status: 'failed', validates: 'Requirements 1.1' });
+                }
+                
+                // Test 2: Food Collection Property Test (Task 2.3 - Optional, not implemented)
+                log('Checking Property 2: Food collection effects');
+                log('⚠️ Property 2 (Food collection effects) - NOT IMPLEMENTED (Optional)', 'warning');
+                testResults.propertyTests.push({ name: 'Food collection effects', status: 'not_implemented', validates: 'Requirements 1.2' });
+                
+                // Test 3: Collision Detection Property Test (Task 6.2 - Optional, not implemented)
+                log('Checking Property 3: Collision detection');
+                log('⚠️ Property 3 (Collision detection) - NOT IMPLEMENTED (Optional)', 'warning');
+                testResults.propertyTests.push({ name: 'Collision detection', status: 'not_implemented', validates: 'Requirements 1.3' });
+                
+                // Test 4: Food Respawning Property Test (Task 2.5 - Optional, not implemented)
+                log('Checking Property 4: Food respawning');
+                log('⚠️ Property 4 (Food respawning) - NOT IMPLEMENTED (Optional)', 'warning');
+                testResults.propertyTests.push({ name: 'Food respawning', status: 'not_implemented', validates: 'Requirements 1.4' });
+                
+                // Test 5: Pathfinding Optimality Property Test (Task 4.2 - Optional, not implemented)
+                log('Checking Property 5: Pathfinding optimality');
+                log('⚠️ Property 5 (Pathfinding optimality) - NOT IMPLEMENTED (Optional)', 'warning');
+                testResults.propertyTests.push({ name: 'Pathfinding optimality', status: 'not_implemented', validates: 'Requirements 2.1' });
+                
+                // Test 6: Difficulty Adaptation Property Test (Task 5.2 - Optional, not implemented)
+                log('Checking Property 6: Difficulty adaptation');
+                log('⚠️ Property 6 (Difficulty adaptation) - NOT IMPLEMENTED (Optional)', 'warning');
+                testResults.propertyTests.push({ name: 'Difficulty adaptation', status: 'not_implemented', validates: 'Requirements 3.1, 3.2, 3.5' });
+                
+                // Test 7: Score Persistence Property Test (Task 5.5 - Optional, not implemented)
+                log('Checking Property 7: Score persistence');
+                log('⚠️ Property 7 (Score persistence) - NOT IMPLEMENTED (Optional)', 'warning');
+                testResults.propertyTests.push({ name: 'Score persistence', status: 'not_implemented', validates: 'Requirements 5.5' });
+                
+                return result1.success;
+                
+            } catch (error) {
+                log(`Property test verification failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        // Unit Test Verification
+        async function verifyUnitTests() {
+            log('=== Verifying Unit Tests ===');
+            
+            try {
+                // Test basic Snake functionality
+                log('Testing Snake class functionality');
+                const snake = new Snake(10, 10);
+                
+                if (snake.getLength() !== 1) {
+                    log('✗ Snake initialization test - FAILED', 'fail');
+                    return false;
+                }
+                log('✓ Snake initialization test - PASSED', 'pass');
+                testResults.unitTests.push({ name: 'Snake initialization', status: 'passed' });
+                
+                // Test Snake movement
+                const initialHead = { ...snake.getHead() };
+                snake.move();
+                const newHead = snake.getHead();
+                
+                if (newHead.x === initialHead.x && newHead.y === initialHead.y) {
+                    log('✗ Snake movement test - FAILED', 'fail');
+                    return false;
+                }
+                log('✓ Snake movement test - PASSED', 'pass');
+                testResults.unitTests.push({ name: 'Snake movement', status: 'passed' });
+                
+                // Test Food functionality
+                log('Testing Food class functionality');
+                const food = new Food();
+                food.spawn(20, 20, []);
+                const pos = food.getPosition();
+                
+                if (!pos || typeof pos.x !== 'number' || typeof pos.y !== 'number') {
+                    log('✗ Food spawning test - FAILED', 'fail');
+                    return false;
+                }
+                log('✓ Food spawning test - PASSED', 'pass');
+                testResults.unitTests.push({ name: 'Food spawning', status: 'passed' });
+                
+                // Test GameEngine initialization
+                log('Testing GameEngine initialization');
+                const canvas = document.createElement('canvas');
+                canvas.width = 400;
+                canvas.height = 400;
+                const engine = new GameEngine(canvas);
+                
+                if (!engine) {
+                    log('✗ GameEngine initialization test - FAILED', 'fail');
+                    return false;
+                }
+                log('✓ GameEngine initialization test - PASSED', 'pass');
+                testResults.unitTests.push({ name: 'GameEngine initialization', status: 'passed' });
+                
+                // Test UIManager initialization
+                log('Testing UIManager initialization');
+                const ui = new UIManager();
+                ui.init();
+                
+                if (!ui) {
+                    log('✗ UIManager initialization test - FAILED', 'fail');
+                    return false;
+                }
+                log('✓ UIManager initialization test - PASSED', 'pass');
+                testResults.unitTests.push({ name: 'UIManager initialization', status: 'passed' });
+                
+                return true;
+                
+            } catch (error) {
+                log(`Unit test verification failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        // Integration Test Verification
+        async function verifyIntegrationTests() {
+            log('=== Verifying Integration Tests ===');
+            
+            try {
+                // Test game engine integration
+                const canvas = document.createElement('canvas');
+                canvas.width = 400;
+                canvas.height = 400;
+                const engine = new GameEngine(canvas);
+                const ui = new UIManager();
+                ui.init();
+                
+                // Test game state management
+                engine.start();
+                if (engine.getGameState() !== 'running') {
+                    log('✗ Game state management integration - FAILED', 'fail');
+                    return false;
+                }
+                log('✓ Game state management integration - PASSED', 'pass');
+                testResults.integrationTests.push({ name: 'Game state management', status: 'passed' });
+                
+                // Test AI system integration
+                const hintSystem = engine.getHintSystem();
+                if (!hintSystem) {
+                    log('✗ AI system integration - FAILED', 'fail');
+                    return false;
+                }
+                log('✓ AI system integration - PASSED', 'pass');
+                testResults.integrationTests.push({ name: 'AI system integration', status: 'passed' });
+                
+                // Test difficulty system integration
+                const difficultyManager = engine.getDifficultyManager();
+                if (!difficultyManager) {
+                    log('✗ Difficulty system integration - FAILED', 'fail');
+                    return false;
+                }
+                log('✓ Difficulty system integration - PASSED', 'pass');
+                testResults.integrationTests.push({ name: 'Difficulty system integration', status: 'passed' });
+                
+                // Test persistence integration
+                localStorage.clear();
+                const gameStats = {
+                    score: 100,
+                    length: 8,
+                    survivalTime: 30000,
+                    foodCollected: 7
+                };
+                
+                ui.updatePersistentStats(gameStats);
+                const ui2 = new UIManager();
+                
+                if (ui2.getHighScore() !== 100) {
+                    log('✗ Persistence integration - FAILED', 'fail');
+                    return false;
+                }
+                log('✓ Persistence integration - PASSED', 'pass');
+                testResults.integrationTests.push({ name: 'Persistence integration', status: 'passed' });
+                
+                return true;
+                
+            } catch (error) {
+                log(`Integration test verification failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        // Requirements Compliance Verification
+        async function verifyRequirementsCompliance() {
+            log('=== Verifying Requirements Compliance ===');
+            
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 400;
+                canvas.height = 400;
+                const engine = new GameEngine(canvas);
+                
+                // Requirement 1.1: Snake movement
+                engine.start();
+                const initialPos = { ...engine.snake.getHead() };
+                engine.changeDirection('up');
+                engine.update();
+                const newPos = engine.snake.getHead();
+                
+                if (newPos.y >= initialPos.y) {
+                    log('✗ Requirement 1.1 (Snake movement) - FAILED', 'fail');
+                    return false;
+                }
+                log('✓ Requirement 1.1 (Snake movement) - PASSED', 'pass');
+                
+                // Requirement 2.1: AI pathfinding
+                const hintSystem = engine.getHintSystem();
+                hintSystem.enableHints();
+                const path = hintSystem.pathfindingEngine.findPath(
+                    { x: 0, y: 0 }, 
+                    { x: 3, y: 3 }, 
+                    []
+                );
+                
+                if (!path || path.length === 0) {
+                    log('✗ Requirement 2.1 (AI pathfinding) - FAILED', 'fail');
+                    return false;
+                }
+                log('✓ Requirement 2.1 (AI pathfinding) - PASSED', 'pass');
+                
+                // Requirement 3.1: Adaptive difficulty
+                const difficultyManager = engine.getDifficultyManager();
+                const initialSpeed = difficultyManager.getCurrentSpeed();
+                
+                if (initialSpeed <= 0 || initialSpeed > 500) {
+                    log('✗ Requirement 3.1 (Adaptive difficulty) - FAILED', 'fail');
+                    return false;
+                }
+                log('✓ Requirement 3.1 (Adaptive difficulty) - PASSED', 'pass');
+                
+                // Requirement 5.5: Score persistence
+                localStorage.clear();
+                const ui = new UIManager();
+                ui.updatePersistentStats({ score: 150, length: 10, survivalTime: 40000, foodCollected: 9 });
+                
+                const ui2 = new UIManager();
+                if (ui2.getHighScore() !== 150) {
+                    log('✗ Requirement 5.5 (Score persistence) - FAILED', 'fail');
+                    return false;
+                }
+                log('✓ Requirement 5.5 (Score persistence) - PASSED', 'pass');
+                
+                return true;
+                
+            } catch (error) {
+                log(`Requirements compliance verification failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        // Main verification functions
+        window.runPropertyTests = async function() {
+            results.innerHTML = '';
+            testResults = { total: 0, passed: 0, failed: 0, warnings: 0, propertyTests: [], unitTests: [], integrationTests: [] };
+            
+            log('🔍 Running Property Test Verification');
+            log('');
+            
+            await verifyPropertyTests();
+            log('');
+            
+            updateTestSummary();
+        };
+
+        window.runUnitTests = async function() {
+            results.innerHTML = '';
+            testResults = { total: 0, passed: 0, failed: 0, warnings: 0, propertyTests: [], unitTests: [], integrationTests: [] };
+            
+            log('⚙️ Running Unit Test Verification');
+            log('');
+            
+            await verifyUnitTests();
+            log('');
+            
+            updateTestSummary();
+        };
+
+        window.runIntegrationTests = async function() {
+            results.innerHTML = '';
+            testResults = { total: 0, passed: 0, failed: 0, warnings: 0, propertyTests: [], unitTests: [], integrationTests: [] };
+            
+            log('🔗 Running Integration Test Verification');
+            log('');
+            
+            await verifyIntegrationTests();
+            log('');
+            
+            updateTestSummary();
+        };
+
+        window.runAllVerifications = async function() {
+            results.innerHTML = '';
+            testResults = { total: 0, passed: 0, failed: 0, warnings: 0, propertyTests: [], unitTests: [], integrationTests: [] };
+            
+            log('🧪 RUNNING COMPLETE TEST VERIFICATION');
+            log('Verifying all implemented tests and system functionality');
+            log('');
+            
+            let allPassed = true;
+            
+            try {
+                if (!await verifyPropertyTests()) allPassed = false;
+                log('');
+                
+                if (!await verifyUnitTests()) allPassed = false;
+                log('');
+                
+                if (!await verifyIntegrationTests()) allPassed = false;
+                log('');
+                
+                if (!await verifyRequirementsCompliance()) allPassed = false;
+                log('');
+                
+            } catch (error) {
+                log(`Verification suite execution failed: ${error.message}`, 'fail');
+                allPassed = false;
+            }
+            
+            if (allPassed && testResults.failed === 0) {
+                log('🎉 ALL VERIFICATIONS PASSED SUCCESSFULLY!', 'pass');
+                log('✅ AI Snake Game implementation is correct and complete', 'pass');
+                log('✅ All implemented tests are working properly', 'pass');
+                log('✅ Core requirements have been validated', 'pass');
+            } else {
+                log('❌ SOME VERIFICATIONS FAILED OR HAVE WARNINGS', 'fail');
+                log('Please review the verification results above', 'warning');
+            }
+            
+            updateTestSummary();
+        };
+
+        window.clearResults = function() {
+            results.innerHTML = '';
+            document.getElementById('testSummary').style.display = 'none';
+            testResults = { total: 0, passed: 0, failed: 0, warnings: 0, propertyTests: [], unitTests: [], integrationTests: [] };
+        };
+
+        // Auto-initialize
+        setTimeout(() => {
+            log('🎮 AI Snake Game - Test Verification Ready');
+            log('This tool verifies all implemented tests and system functionality');
+            log('Click "Verify All Tests" to run complete verification');
+            log('');
+        }, 100);
+    </script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game Property Tests</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #00ff00;
+        }
+        .test-output {
+            background-color: #000;
+            padding: 20px;
+            border: 1px solid #00ff00;
+            white-space: pre-wrap;
+        }
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+    </style>
+</head>
+<body>
+    <h1>Snake Game Property Tests</h1>
+    <div id="output" class="test-output"></div>
+    
+    <script type="module">
+        import { SnakePropertyTest } from './js/entities/Snake.property.test.js';
+        
+        const output = document.getElementById('output');
+        
+        // Override console to display in browser
+        const originalConsole = console;
+        console.log = function(...args) {
+            const div = document.createElement('div');
+            div.textContent = args.join(' ');
+            div.className = 'normal';
+            output.appendChild(div);
+            originalConsole.log(...args);
+        };
+        
+        console.error = function(...args) {
+            const div = document.createElement('div');
+            div.textContent = args.join(' ');
+            div.className = 'error';
+            output.appendChild(div);
+            originalConsole.error(...args);
+        };
+        
+        // Run the property test
+        try {
+            const result = SnakePropertyTest.runInputDirectionMappingTest(100);
+            
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = result.success ? 'success' : 'error';
+            summaryDiv.textContent = result.success 
+                ? '🎉 PROPERTY TEST PASSED!' 
+                : '❌ PROPERTY TEST FAILED!';
+            output.appendChild(summaryDiv);
+            
+        } catch (error) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = `Test execution error: ${error.message}`;
+            output.appendChild(errorDiv);
+        }
+    </script>
+</body>
+</html>

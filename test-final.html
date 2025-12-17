@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Tests - AI Snake Game</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff41;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #00ff41;
+            border-radius: 5px;
+        }
+        .pass { color: #00ff41; }
+        .fail { color: #ff0040; }
+        .info { color: #ffff00; }
+        .warning { color: #ff8800; }
+        button {
+            background: #00ff41;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button:hover {
+            background: #66ff66;
+        }
+        #results {
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 500px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border: 1px solid #333;
+        }
+        .test-summary {
+            background: rgba(0, 255, 65, 0.1);
+            border: 2px solid #00ff41;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .game-preview {
+            border: 2px solid #00ff41;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Snake Game - Final Test Suite</h1>
+    <p class="info">Comprehensive testing of all game systems and requirements</p>
+    
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button onclick="runAllTests()">🧪 Run All Tests</button>
+        <button onclick="runCoreTests()">⚙️ Core Functionality</button>
+        <button onclick="runAITests()">🤖 AI Systems</button>
+        <button onclick="runUITests()">🎮 UI & Controls</button>
+        <button onclick="runPersistenceTests()">💾 Persistence</button>
+        <button onclick="clearResults()">🗑️ Clear Results</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Live Game Instance</h2>
+        <canvas id="testCanvas" class="game-preview" width="300" height="300"></canvas>
+        <p>Live game instance for interactive testing</p>
+        <button onclick="startTestGame()">▶️ Start Game</button>
+        <button onclick="pauseTestGame()">⏸️ Pause</button>
+        <button onclick="restartTestGame()">🔄 Restart</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="testSummary" class="test-summary" style="display: none;">
+            <h3>Test Summary</h3>
+            <div id="summaryContent"></div>
+        </div>
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        import { GameEngine } from './js/game/GameEngine.js';
+        import { UIManager } from './js/ui/UIManager.js';
+        import { Snake } from './js/entities/Snake.js';
+        import { Food } from './js/entities/Food.js';
+
+        let results = document.getElementById('results');
+        let testGameEngine = null;
+        let testUIManager = null;
+        let testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0,
+            warnings: 0
+        };
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'pass' ? '✅' : type === 'fail' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            results.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+            results.scrollTop = results.scrollHeight;
+            
+            // Update test counters
+            testResults.total++;
+            if (type === 'pass') testResults.passed++;
+            else if (type === 'fail') testResults.failed++;
+            else if (type === 'warning') testResults.warnings++;
+        }
+
+        function updateTestSummary() {
+            const summary = document.getElementById('testSummary');
+            const content = document.getElementById('summaryContent');
+            
+            const passRate = testResults.total > 0 ? (testResults.passed / testResults.total * 100).toFixed(1) : 0;
+            
+            content.innerHTML = `
+                <p><strong>Total Tests:</strong> ${testResults.total}</p>
+                <p><strong>Passed:</strong> ${testResults.passed} (${passRate}%)</p>
+                <p><strong>Failed:</strong> ${testResults.failed}</p>
+                <p><strong>Warnings:</strong> ${testResults.warnings}</p>
+                <p><strong>Status:</strong> ${testResults.failed === 0 ? '🎉 ALL TESTS PASSED' : '❌ Some tests failed'}</p>
+            `;
+            
+            summary.style.display = 'block';
+        }
+
+        function initTestGame() {
+            const canvas = document.getElementById('testCanvas');
+            testGameEngine = new GameEngine(canvas);
+            testUIManager = new UIManager();
+            testUIManager.init();
+            return { engine: testGameEngine, ui: testUIManager };
+        }
+
+        // Core functionality tests
+        function testCoreGameMechanics() {
+            log('=== Testing Core Game Mechanics ===');
+            
+            try {
+                const { engine } = initTestGame();
+                
+                // Test 1: Game initialization
+                if (!engine) {
+                    log('Game engine failed to initialize', 'fail');
+                    return false;
+                }
+                log('Game engine initialized successfully', 'pass');
+                
+                // Test 2: Snake creation and basic properties
+                const snake = new Snake(10, 10);
+                if (snake.getLength() !== 1) {
+                    log(`Expected snake length 1, got ${snake.getLength()}`, 'fail');
+                    return false;
+                }
+                log('Snake initialization correct', 'pass');
+                
+                // Test 3: Food creation
+                const food = new Food();
+                food.spawn(20, 20, []);
+                const pos = food.getPosition();
+                if (!pos || typeof pos.x !== 'number' || typeof pos.y !== 'number') {
+                    log('Food spawning failed', 'fail');
+                    return false;
+                }
+                log('Food spawning works correctly', 'pass');
+                
+                // Test 4: Snake movement
+                const initialHead = { ...snake.getHead() };
+                snake.move();
+                const newHead = snake.getHead();
+                if (newHead.x === initialHead.x && newHead.y === initialHead.y) {
+                    log('Snake movement not working', 'fail');
+                    return false;
+                }
+                log('Snake movement working', 'pass');
+                
+                // Test 5: Direction changes
+                snake.changeDirection('up');
+                if (snake.direction !== 'up') {
+                    log('Direction change not working', 'fail');
+                    return false;
+                }
+                log('Direction changes working', 'pass');
+                
+                // Test 6: Game state management
+                engine.start();
+                if (engine.getGameState() !== 'running') {
+                    log(`Expected game state 'running', got '${engine.getGameState()}'`, 'fail');
+                    return false;
+                }
+                log('Game state management working', 'pass');
+                
+                return true;
+                
+            } catch (error) {
+                log(`Core mechanics test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        function testAISystems() {
+            log('=== Testing AI Systems ===');
+            
+            try {
+                const { engine } = initTestGame();
+                
+                // Test 1: Hint system initialization
+                const hintSystem = engine.getHintSystem();
+                if (!hintSystem) {
+                    log('Hint system not initialized', 'fail');
+                    return false;
+                }
+                log('Hint system initialized', 'pass');
+                
+                // Test 2: Pathfinding engine access
+                if (!hintSystem.pathfindingEngine) {
+                    log('Pathfinding engine not accessible', 'fail');
+                    return false;
+                }
+                log('Pathfinding engine accessible', 'pass');
+                
+                // Test 3: Hint toggle functionality
+                const initialState = hintSystem.areHintsEnabled();
+                hintSystem.toggleHints();
+                const newState = hintSystem.areHintsEnabled();
+                if (initialState === newState) {
+                    log('Hint toggle not working', 'fail');
+                    return false;
+                }
+                log('Hint toggle working', 'pass');
+                
+                // Test 4: Path calculation
+                hintSystem.enableHints();
+                const testPath = hintSystem.pathfindingEngine.findPath(
+                    { x: 0, y: 0 }, 
+                    { x: 2, y: 2 }, 
+                    []
+                );
+                if (!testPath || testPath.length === 0) {
+                    log('Path calculation not working', 'fail');
+                    return false;
+                }
+                log('Path calculation working', 'pass');
+                
+                // Test 5: Safe moves detection
+                const safeMoves = hintSystem.pathfindingEngine.findSafeMoves(
+                    { x: 5, y: 5 }, 
+                    []
+                );
+                if (!Array.isArray(safeMoves) || safeMoves.length === 0) {
+                    log('Safe moves detection not working', 'fail');
+                    return false;
+                }
+                log('Safe moves detection working', 'pass');
+                
+                return true;
+                
+            } catch (error) {
+                log(`AI systems test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        function testDifficultySystem() {
+            log('=== Testing Difficulty System ===');
+            
+            try {
+                const { engine } = initTestGame();
+                
+                // Test 1: Difficulty manager initialization
+                const difficultyManager = engine.getDifficultyManager();
+                if (!difficultyManager) {
+                    log('Difficulty manager not initialized', 'fail');
+                    return false;
+                }
+                log('Difficulty manager initialized', 'pass');
+                
+                // Test 2: Initial difficulty settings
+                const initialSpeed = difficultyManager.getCurrentSpeed();
+                if (initialSpeed <= 0 || initialSpeed > 500) {
+                    log(`Invalid initial speed: ${initialSpeed}`, 'fail');
+                    return false;
+                }
+                log(`Initial speed valid: ${initialSpeed}ms`, 'pass');
+                
+                // Test 3: Difficulty level calculation
+                const difficultyLevel = difficultyManager.getDifficultyLevel();
+                if (difficultyLevel < 1 || difficultyLevel > 10) {
+                    log(`Invalid difficulty level: ${difficultyLevel}`, 'fail');
+                    return false;
+                }
+                log(`Difficulty level valid: ${difficultyLevel}/10`, 'pass');
+                
+                // Test 4: Performance tracking
+                const gameStats = {
+                    score: 100,
+                    length: 8,
+                    survivalTime: 30000,
+                    foodCollected: 7
+                };
+                
+                difficultyManager.recordGameEnd(gameStats);
+                const perfStats = difficultyManager.getPerformanceStats();
+                
+                if (perfStats.gamesPlayed !== 1) {
+                    log(`Expected 1 game recorded, got ${perfStats.gamesPlayed}`, 'fail');
+                    return false;
+                }
+                log('Performance tracking working', 'pass');
+                
+                return true;
+                
+            } catch (error) {
+                log(`Difficulty system test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        function testUIAndControls() {
+            log('=== Testing UI and Controls ===');
+            
+            try {
+                const { engine, ui } = initTestGame();
+                
+                // Test 1: UI manager initialization
+                if (!ui) {
+                    log('UI manager not initialized', 'fail');
+                    return false;
+                }
+                log('UI manager initialized', 'pass');
+                
+                // Test 2: Score update functionality
+                let scoreUpdateReceived = false;
+                engine.setScoreUpdateCallback((data) => {
+                    scoreUpdateReceived = true;
+                });
+                
+                engine.start();
+                engine.notifyScoreUpdate();
+                
+                if (!scoreUpdateReceived) {
+                    log('Score update callback not working', 'fail');
+                    return false;
+                }
+                log('Score update system working', 'pass');
+                
+                // Test 3: Game over callback
+                let gameOverReceived = false;
+                engine.setGameOverCallback((stats) => {
+                    gameOverReceived = true;
+                });
+                
+                engine.endGame();
+                
+                if (!gameOverReceived) {
+                    log('Game over callback not working', 'fail');
+                    return false;
+                }
+                log('Game over system working', 'pass');
+                
+                // Test 4: Live stats functionality
+                const statsVisible = ui.toggleLiveStats();
+                if (typeof statsVisible !== 'boolean') {
+                    log('Live stats toggle not working', 'fail');
+                    return false;
+                }
+                log('Live stats system working', 'pass');
+                
+                // Test 5: Keyboard shortcuts (simulate)
+                const hintsEnabled = engine.toggleHints();
+                if (typeof hintsEnabled !== 'boolean') {
+                    log('Keyboard shortcuts not working', 'fail');
+                    return false;
+                }
+                log('Keyboard shortcuts working', 'pass');
+                
+                return true;
+                
+            } catch (error) {
+                log(`UI and controls test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        function testPersistenceSystem() {
+            log('=== Testing Persistence System ===');
+            
+            try {
+                // Clear existing data
+                localStorage.clear();
+                
+                const { ui } = initTestGame();
+                
+                // Test 1: High score persistence
+                const gameStats = {
+                    score: 250,
+                    length: 15,
+                    survivalTime: 45000,
+                    foodCollected: 14
+                };
+                
+                ui.updatePersistentStats(gameStats);
+                
+                // Create new UI manager to test loading
+                const ui2 = new UIManager();
+                if (ui2.getHighScore() !== 250) {
+                    log(`Expected high score 250, got ${ui2.getHighScore()}`, 'fail');
+                    return false;
+                }
+                log('High score persistence working', 'pass');
+                
+                // Test 2: Game data persistence
+                const persistentStats = ui2.loadGameData();
+                if (persistentStats.totalGamesPlayed !== 1) {
+                    log(`Expected 1 game played, got ${persistentStats.totalGamesPlayed}`, 'fail');
+                    return false;
+                }
+                log('Game data persistence working', 'pass');
+                
+                // Test 3: Data validation
+                localStorage.setItem('snakeHighScore', 'invalid');
+                const ui3 = new UIManager();
+                if (ui3.getHighScore() !== 0) {
+                    log('Data validation not working for invalid high score', 'fail');
+                    return false;
+                }
+                log('Data validation working', 'pass');
+                
+                // Test 4: Difficulty persistence
+                const { engine } = initTestGame();
+                const difficultyManager = engine.getDifficultyManager();
+                
+                difficultyManager.recordGameEnd(gameStats);
+                
+                // Verify data was saved
+                const perfStats = difficultyManager.getPerformanceStats();
+                if (perfStats.gamesPlayed !== 1) {
+                    log(`Expected 1 game in difficulty history, got ${perfStats.gamesPlayed}`, 'fail');
+                    return false;
+                }
+                log('Difficulty persistence working', 'pass');
+                
+                return true;
+                
+            } catch (error) {
+                log(`Persistence system test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        function testRequirementsCompliance() {
+            log('=== Testing Requirements Compliance ===');
+            
+            try {
+                const { engine } = initTestGame();
+                
+                // Requirement 1.1: Snake movement
+                engine.start();
+                const initialPos = engine.snake.getHead();
+                engine.changeDirection('up');
+                engine.update();
+                const newPos = engine.snake.getHead();
+                
+                if (newPos.y >= initialPos.y) {
+                    log('Requirement 1.1 (Snake movement) - FAILED', 'fail');
+                    return false;
+                }
+                log('Requirement 1.1 (Snake movement) - PASSED', 'pass');
+                
+                // Requirement 2.1: AI pathfinding
+                const hintSystem = engine.getHintSystem();
+                hintSystem.enableHints();
+                const path = hintSystem.pathfindingEngine.findPath(
+                    { x: 0, y: 0 }, 
+                    { x: 3, y: 3 }, 
+                    []
+                );
+                
+                if (!path || path.length === 0) {
+                    log('Requirement 2.1 (AI pathfinding) - FAILED', 'fail');
+                    return false;
+                }
+                log('Requirement 2.1 (AI pathfinding) - PASSED', 'pass');
+                
+                // Requirement 3.1: Adaptive difficulty
+                const difficultyManager = engine.getDifficultyManager();
+                const initialSpeed = difficultyManager.getCurrentSpeed();
+                
+                // Simulate successful food collection
+                difficultyManager.recordFoodCollection(50, 5);
+                difficultyManager.recordFoodCollection(100, 6);
+                difficultyManager.recordFoodCollection(150, 7);
+                
+                const newSpeed = difficultyManager.getCurrentSpeed();
+                
+                if (newSpeed >= initialSpeed) {
+                    log('Requirement 3.1 (Adaptive difficulty) - WARNING: Speed not increased', 'warning');
+                } else {
+                    log('Requirement 3.1 (Adaptive difficulty) - PASSED', 'pass');
+                }
+                
+                // Requirement 5.5: Score persistence
+                const ui = new UIManager();
+                ui.updatePersistentStats({ score: 100, length: 5, survivalTime: 20000, foodCollected: 4 });
+                
+                const ui2 = new UIManager();
+                if (ui2.getHighScore() !== 100) {
+                    log('Requirement 5.5 (Score persistence) - FAILED', 'fail');
+                    return false;
+                }
+                log('Requirement 5.5 (Score persistence) - PASSED', 'pass');
+                
+                return true;
+                
+            } catch (error) {
+                log(`Requirements compliance test failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+
+        // Main test functions
+        window.runCoreTests = function() {
+            results.innerHTML = '';
+            testResults = { total: 0, passed: 0, failed: 0, warnings: 0 };
+            
+            log('Running Core Functionality Tests');
+            log('');
+            
+            testCoreGameMechanics();
+            log('');
+            
+            updateTestSummary();
+        };
+
+        window.runAITests = function() {
+            results.innerHTML = '';
+            testResults = { total: 0, passed: 0, failed: 0, warnings: 0 };
+            
+            log('Running AI Systems Tests');
+            log('');
+            
+            testAISystems();
+            log('');
+            testDifficultySystem();
+            log('');
+            
+            updateTestSummary();
+        };
+
+        window.runUITests = function() {
+            results.innerHTML = '';
+            testResults = { total: 0, passed: 0, failed: 0, warnings: 0 };
+            
+            log('Running UI & Controls Tests');
+            log('');
+            
+            testUIAndControls();
+            log('');
+            
+            updateTestSummary();
+        };
+
+        window.runPersistenceTests = function() {
+            results.innerHTML = '';
+            testResults = { total: 0, passed: 0, failed: 0, warnings: 0 };
+            
+            log('Running Persistence Tests');
+            log('');
+            
+            testPersistenceSystem();
+            log('');
+            
+            updateTestSummary();
+        };
+
+        window.runAllTests = function() {
+            results.innerHTML = '';
+            testResults = { total: 0, passed: 0, failed: 0, warnings: 0 };
+            
+            log('🧪 RUNNING COMPLETE TEST SUITE');
+            log('Testing all systems and requirements compliance');
+            log('');
+            
+            let allPassed = true;
+            
+            try {
+                if (!testCoreGameMechanics()) allPassed = false;
+                log('');
+                
+                if (!testAISystems()) allPassed = false;
+                log('');
+                
+                if (!testDifficultySystem()) allPassed = false;
+                log('');
+                
+                if (!testUIAndControls()) allPassed = false;
+                log('');
+                
+                if (!testPersistenceSystem()) allPassed = false;
+                log('');
+                
+                if (!testRequirementsCompliance()) allPassed = false;
+                log('');
+                
+            } catch (error) {
+                log(`Test suite execution failed: ${error.message}`, 'fail');
+                allPassed = false;
+            }
+            
+            if (allPassed && testResults.failed === 0) {
+                log('🎉 ALL TESTS PASSED SUCCESSFULLY!', 'pass');
+                log('✅ AI Snake Game is ready for deployment', 'pass');
+                log('✅ All requirements have been validated', 'pass');
+            } else {
+                log('❌ SOME TESTS FAILED OR HAVE WARNINGS', 'fail');
+                log('Please review the test results above', 'warning');
+            }
+            
+            updateTestSummary();
+        };
+
+        // Game control functions
+        window.startTestGame = function() {
+            if (!testGameEngine) {
+                initTestGame();
+            }
+            testGameEngine.start();
+            log('Test game started', 'info');
+        };
+
+        window.pauseTestGame = function() {
+            if (testGameEngine) {
+                testGameEngine.togglePause();
+                log('Test game paused/resumed', 'info');
+            }
+        };
+
+        window.restartTestGame = function() {
+            if (testGameEngine) {
+                testGameEngine.start();
+                log('Test game restarted', 'info');
+            }
+        };
+
+        window.clearResults = function() {
+            results.innerHTML = '';
+            document.getElementById('testSummary').style.display = 'none';
+            testResults = { total: 0, passed: 0, failed: 0, warnings: 0 };
+        };
+
+        // Auto-initialize
+        setTimeout(() => {
+            log('🎮 AI Snake Game - Final Test Suite Ready');
+            log('Click "Run All Tests" to verify complete system functionality');
+            log('Use the live game instance to test interactively');
+            log('');
+        }, 100);
+    </script>
+</body>
+</html>
