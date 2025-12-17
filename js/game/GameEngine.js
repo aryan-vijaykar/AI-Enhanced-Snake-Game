@@ -278,10 +278,6 @@ export class GameEngine {
         // Render food with retro styling
         this.renderFood();
         
-        // Debug: Always render something visible to test
-        this.ctx.fillStyle = '#ff0000';
-        this.ctx.fillRect(10, 10, 20, 20);
-        
         // Render AI hints if enabled
    //    if (this.hintSystem && this.hintSystem.areHintsEnabled()) {
      //       this.hintSystem.render(this.ctx, this.snake.getHead(), this.snake.getBody());
