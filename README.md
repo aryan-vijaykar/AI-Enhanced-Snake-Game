@@ -2,7 +2,7 @@
 
 **Kiro Heroes Challenge Week 4: "Retro Revival"**
 
-A classic Snake game recreated with modern AI enhancements, built using Kiro's spec-driven development approach.
+A classic Snake game recreated with modern AI enhancements, built using Kiro's spec-driven development approach to manage complex gameplay logic, adaptive difficulty, and intelligent player assistance.
 
 ## 🎮 Live Demo
 
