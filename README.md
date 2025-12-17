@@ -151,7 +151,7 @@ displayHints(path) {
 
 ## 📝 Development Blog
 
-Read the complete development story on [AWS Builder Center](your-blog-link-here) covering:
+Read the complete development story on [AWS Builder Center](https://builder.aws.com/content/36ypXfPJfji3pBZXZSl5e3RDLOJ/ai-enhanced-snake-game-rebuilding-a-classic-with-spec-driven-development-using-kiro) covering:
 - Problem analysis and solution design
 - How Kiro accelerated development
 - AI implementation details
